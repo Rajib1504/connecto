@@ -1,9 +1,11 @@
 import { eq } from "drizzle-orm";
 import { db } from "../db";
 import { users } from "../db/schema";
-import { SignupInput } from "../validator/auth.validator"
+import { SigninInput, SignupInput } from "../validator/auth.validator"
 import ApiError from "../utils/api-error";
-import { hashPassword } from "../utils/hash-password";
+import { comparePassword, hashPassword } from "../utils/hash-password";
+import { env } from "../config/env";
+import { generateToken } from "../utils/jwt";
 
 const registerUser = async (data: SignupInput) => {
   const { name, email, password } = data
@@ -36,10 +38,34 @@ const registerUser = async (data: SignupInput) => {
     });
   return newUser;
 }
-const loginService = () => {
-  return "login"
+const loginUser = async (data: SigninInput) => {
+  const { email, password } = data
+  // find user by email
+  const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+
+  if (!user) {
+    throw ApiError.unauthorized("Invalid credentials");
+  }
+  // compare password 
+  const isPasswordMatch = await comparePassword(password, user.password);
+
+  if (!isPasswordMatch) {
+    throw ApiError.unauthorized("Invalid credentials");
+  }
+
+  // generate token
+  const token = generateToken({ userId: user.id });
+  // return user with token
+  return {
+    token,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+    }
+  }
 }
 const logoutService = () => {
   return "logout"
 }
-export { registerUser, loginService, logoutService }
+export { registerUser, loginUser, logoutService }
