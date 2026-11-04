@@ -68,4 +68,4 @@ const loginUser = async (data: SigninInput) => {
 const logoutService = () => {
   return "logout"
 }
-export { registerUser, loginUser, logoutService }
+export { registerUser, loginUser }

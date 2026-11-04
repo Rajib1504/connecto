@@ -34,6 +34,19 @@ const signInController: RequestHandler = async (req, res, next) => {
     next(error);
   }
 };
+const logoutController: RequestHandler = (req, res, next) => {
+  try {
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+
+    return ApiResponse.ok(res, "Logout successful");
+  } catch (error) {
+    next(error);
+  }
+};
 
 
-export { signupController, signInController };
+export { signupController, signInController, logoutController };
