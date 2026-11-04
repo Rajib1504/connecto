@@ -25,7 +25,7 @@ const signInController: RequestHandler = async (req, res, next) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 24 * 60 * 60 * 1000,
     });
 
@@ -39,7 +39,7 @@ const logoutController: RequestHandler = (req, res, next) => {
     res.clearCookie("token", {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: env.NODE_ENV === "production" ? "none" : "lax",
     });
 
     return ApiResponse.ok(res, "Logout successful");
