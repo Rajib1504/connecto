@@ -1,13 +1,104 @@
 import { useState } from "react";
-import { Link } from "react-router";
-import { Eye, EyeOff, MessageCircle } from "lucide-react";
+import type { ChangeEvent, FormEvent } from "react";
+import { Link, useNavigate } from "react-router";
+import { Eye, EyeOff, Loader2, MessageCircle } from "lucide-react";
+import toast from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import api from "@/lib/axios";
+
+type FormData = {
+  email: string;
+  password: string;
+};
+
+type FormErrors = Partial<Record<keyof FormData, string>>;
 
 const SignIn = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState<FormData>({
+    email: "",
+    password: "",
+  });
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  const validateField = (name: keyof FormData, value: string): string => {
+    if (name === "email") {
+      if (!value.trim()) {
+        return "Email is required.";
+      }
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        return "Please enter a valid email address.";
+      }
+    }
+
+    if (name === "password" && !value) {
+      return "Password is required.";
+    }
+
+    return "";
+  };
+
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    const fieldName = name as keyof FormData;
+
+    setFormData((previous) => ({ ...previous, [fieldName]: value }));
+    setErrors((previous) => ({
+      ...previous,
+      [fieldName]: validateField(fieldName, value),
+    }));
+  };
+
+  const isFormValid = Object.keys(formData).every((key) => {
+    const field = key as keyof FormData;
+    return validateField(field, formData[field]) === "";
+  });
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const newErrors: FormErrors = {};
+    (Object.keys(formData) as Array<keyof FormData>).forEach((field) => {
+      const error = validateField(field, formData[field]);
+      if (error) {
+        newErrors[field] = error;
+      }
+    });
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      toast.error(Object.values(newErrors)[0] ?? "Please check the form.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      const result = await api.post("/auth/signin", {
+        email: formData.email.trim(),
+        password: formData.password,
+      });
+
+      if (result.data.success) {
+        toast.success(result.data.message);
+        setFormData({ email: "", password: "" });
+        navigate("/", { replace: true });
+      } else {
+        toast.error(result.data.message ?? "Unable to sign in.");
+      }
+    } catch {
+      toast.error("Invalid email or password. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
@@ -35,7 +126,7 @@ const SignIn = () => {
             </p>
           </div>
 
-          <form className="space-y-5">
+          <form className="space-y-5" onSubmit={handleSubmit} noValidate>
             {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email">Email address</Label>
@@ -43,10 +134,15 @@ const SignIn = () => {
                 id="email"
                 name="email"
                 type="email"
+                value={formData.email}
+                onChange={handleChange}
                 placeholder="john@example.com"
                 autoComplete="email"
-                required
+                aria-invalid={!!errors.email}
               />
+              {errors.email && (
+                <p className="text-xs text-destructive">{errors.email}</p>
+              )}
             </div>
 
             {/* Password */}
@@ -60,10 +156,12 @@ const SignIn = () => {
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={handleChange}
                   placeholder="Enter your password"
                   autoComplete="current-password"
                   className="pr-11"
-                  required
+                  aria-invalid={!!errors.password}
                 />
 
                 <button
@@ -75,11 +173,25 @@ const SignIn = () => {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+              {errors.password && (
+                <p className="text-xs text-destructive">{errors.password}</p>
+              )}
             </div>
 
             {/* Submit */}
-            <Button type="submit" className="w-full">
-              Sign in
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={!isFormValid || isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="animate-spin" aria-hidden="true" />
+                  Signing in...
+                </>
+              ) : (
+                "Sign in"
+              )}
             </Button>
           </form>
 

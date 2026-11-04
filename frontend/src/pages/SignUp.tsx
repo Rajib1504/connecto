@@ -154,6 +154,7 @@ const Signup = () => {
       password: formData.password,
     };
 
+    //api call
     try {
       setIsSubmitting(true);
 
@@ -163,6 +164,12 @@ const Signup = () => {
       if (result.data.success) {
         toast.success(result.data.message);
         navigate("/signIn", { replace: true });
+        setFormData({
+          name: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+        });
       } else {
         toast.error(result.data.message);
       }
@@ -171,12 +178,6 @@ const Signup = () => {
     } finally {
       setIsSubmitting(false);
     }
-    setFormData({
-      name: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    });
   };
 
   return (
@@ -339,7 +340,7 @@ const Signup = () => {
           <div className="mt-6 text-center text-sm text-muted-foreground">
             Already have an account?{" "}
             <Link
-              to="/signin"
+              to="/signIn"
               className="font-medium text-primary hover:underline"
             >
               Sign in
