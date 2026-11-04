@@ -47,6 +47,15 @@ const logoutController: RequestHandler = (req, res, next) => {
     next(error);
   }
 };
+const getMeController: RequestHandler = async (req, res, next) => {
+  try {
+    const user = await authService.getCurrentUser(req.user!.userId);
+
+    return ApiResponse.ok(res, "User fetched successfully", user);
+  } catch (error) {
+    next(error);
+  }
+};
 
 
-export { signupController, signInController, logoutController };
+export { signupController, signInController, logoutController, getMeController };

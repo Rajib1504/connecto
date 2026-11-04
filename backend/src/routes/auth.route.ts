@@ -9,13 +9,14 @@ const AuthRouter = Router();
 
 AuthRouter.post("/signup", validate(signupSchema), authController.signupController);
 AuthRouter.post("/signin", validate(signinSchema), authController.signInController);
+AuthRouter.get("/me", authenticate, authController.getMeController);
 AuthRouter.post("/logout", authController.logoutController);
 
 
-//temporary test route
-AuthRouter.get("/protected", authenticate, (req, res) => {
-  return ApiResponse.ok(res, "Authenticated successfully", {
-    userId: req.user?.userId,
-  });
-});
+// //temporary test route
+// AuthRouter.get("/protected", authenticate, (req, res) => {
+//   return ApiResponse.ok(res, "Authenticated successfully", {
+//     userId: req.user?.userId,
+//   });
+// });
 export default AuthRouter;

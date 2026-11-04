@@ -65,7 +65,22 @@ const loginUser = async (data: SigninInput) => {
     }
   }
 }
-const logoutService = () => {
-  return "logout"
-}
-export { registerUser, loginUser }
+const getCurrentUser = async (userId: number) => {
+  const [user] = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  return user;
+};
+
+export { registerUser, loginUser, getCurrentUser }
