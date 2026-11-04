@@ -1,8 +1,4 @@
-import {
-  Search,
-  Users,
-  MoreVertical,
-} from "lucide-react";
+import { Search, Users, MoreVertical } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -50,8 +46,10 @@ const ChatDashboard = () => {
   const [isSending, setIsSending] = useState(false);
 
   //socket
+  const socketUrl = new URL(import.meta.env.VITE_API_URL).origin;
+
   useEffect(() => {
-    const socket = io("http://localhost:5000", {
+    const socket = io(socketUrl, {
       withCredentials: true,
     });
 
@@ -64,17 +62,13 @@ const ChatDashboard = () => {
     });
 
     socket.on("new-message", (newMessage: Message) => {
-      // console.log("New message received:", newMessage);
-
       setMessages((prevMessages) => {
-        // Check whether this message belongs to the selected chat
         const isCurrentChat =
           selectedUser?.id === newMessage.senderId ||
           selectedUser?.id === newMessage.receiverId;
 
         if (!isCurrentChat) return prevMessages;
 
-        // Prevent duplicate messages
         const alreadyExists = prevMessages.some(
           (message) => message.id === newMessage.id,
         );
