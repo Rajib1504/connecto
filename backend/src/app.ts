@@ -5,16 +5,11 @@ import cookieParser from "cookie-parser";
 import ApiError from "./utils/api-error";
 import UserRouter from "./routes/user.route";
 import MessageRouter from "./routes/message.route";
-
+import corsConfig from "./config/cors";
 
 const app = express();
-app.use(
-  cors({
-    origin: "http://localhost:5173",
-    credentials: true,
-    optionsSuccessStatus: 200,
-  }),
-);
+
+app.use(corsConfig);
 app.use(express.json());
 app.use(cookieParser());
 
