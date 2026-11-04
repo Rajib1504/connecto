@@ -182,17 +182,17 @@ const ChatDashboard = () => {
     }
   };
   return (
-    <div className="h-full min-h-[calc(100vh-8rem)] bg-background p-4 sm:p-6">
-      <div className="mx-auto flex h-full max-w-7xl overflow-hidden rounded-xl border bg-card">
+    <div className="flex min-h-0 flex-1 flex-col bg-background px-4 pt-4 pb-0 sm:p-6">
+      <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 overflow-hidden rounded-xl border bg-card">
         {/* Users Sidebar */}
-        <aside className="flex w-full flex-col border-r md:w-80 lg:w-96">
+        <aside className="flex w-[38%] shrink-0 flex-col border-r sm:w-2/5 md:w-80 lg:w-96">
           {/* Sidebar Header */}
-          <div className="flex items-center justify-between border-b p-4">
+          <div className="flex items-center justify-between border-b p-2 sm:p-4">
             <div>
-              <h2 className="text-lg font-semibold text-foreground">
+              <h2 className="text-sm font-semibold text-foreground sm:text-lg">
                 Messages
               </h2>
-              <p className="text-sm text-muted-foreground">
+              <p className="hidden text-sm text-muted-foreground sm:block">
                 Connect with people
               </p>
             </div>
@@ -203,19 +203,19 @@ const ChatDashboard = () => {
           </div>
 
           {/* Search */}
-          <div className="border-b p-4">
+          <div className="border-b p-2 sm:p-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 
-              <Input placeholder="Search users..." className="pl-9" />
+              <Input placeholder="Search..." className="h-8 pl-8 text-xs sm:h-9 sm:pl-9 sm:text-sm" />
             </div>
           </div>
 
           {/* User List */}
           <div className="flex min-h-0 flex-1 flex-col">
-            <div className="flex items-center gap-2 px-4 py-4">
+            <div className="flex items-center gap-1 px-2 py-3 sm:gap-2 sm:px-4 sm:py-4">
               <Users className="size-4 text-muted-foreground" />
-              <h3 className="text-sm font-semibold text-foreground">
+              <h3 className="truncate text-xs font-semibold text-foreground sm:text-sm">
                 All Users
               </h3>
               <span className="text-xs text-muted-foreground">
@@ -235,19 +235,19 @@ const ChatDashboard = () => {
                       setSelectedUser(user);
                       fetchChatHistory(user.id);
                     }}
-                    className={`flex w-full items-center gap-3 border-b px-4 py-3 text-left transition-colors hover:bg-accent ${
+                    className={`flex w-full items-center gap-2 border-b px-2 py-2 text-left transition-colors hover:bg-accent sm:gap-3 sm:px-4 sm:py-3 ${
                       selectedUser?.id === user.id ? "bg-accent" : ""
                     }`}
                   >
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-semibold text-foreground">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground sm:size-10 sm:text-sm">
                       {user.name.charAt(0).toUpperCase()}
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-foreground">
+                      <p className="truncate text-xs font-medium text-foreground sm:text-sm">
                         {user.name}
                       </p>
-                      <p className="truncate text-xs text-muted-foreground">
+                      <p className="truncate text-[10px] text-muted-foreground sm:text-xs">
                         {user.email}
                       </p>
                     </div>
@@ -275,9 +275,9 @@ const ChatDashboard = () => {
         </aside>
 
         {/* Chat Window */}
-        <main className="hidden flex-1 flex-col md:flex">
+        <main className="flex min-w-0 flex-1 flex-col">
           {/* Chat Header */}
-          <div className="flex h-18.25 items-center justify-between border-b px-6">
+          <div className="flex h-18.25 items-center justify-between border-b px-3 sm:px-6">
             {selectedUser ? (
               <div>
                 <p className="text-sm font-semibold text-foreground">
@@ -303,7 +303,7 @@ const ChatDashboard = () => {
           <div
             ref={chatContainerRef}
             onScroll={handleChatScroll}
-            className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4"
+            className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-2 sm:p-4"
           >
             {isLoadingMessages && (
               <p className="text-center text-sm text-muted-foreground">
@@ -322,7 +322,7 @@ const ChatDashboard = () => {
                   }`}
                 >
                   <div
-                    className={`max-w-[75%] rounded-2xl px-4 py-3 ${
+                    className={`max-w-[90%] rounded-2xl px-3 py-2 sm:max-w-[75%] sm:px-4 sm:py-3 ${
                       isOwnMessage
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-foreground"
@@ -351,7 +351,7 @@ const ChatDashboard = () => {
           {/* Message Input - Disabled until conversation selected */}
           <form
             onSubmit={handleSendMessage}
-            className="flex items-center gap-3 border-t p-4"
+            className="flex items-center gap-2 border-t p-2 sm:gap-3 sm:p-4"
           >
             <Input
               placeholder={
