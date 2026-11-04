@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import api from "@/lib/axios";
 import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
-
+import { io } from "socket.io-client";
 const ChatDashboard = () => {
   type User = {
     id: number;
@@ -50,6 +50,47 @@ const ChatDashboard = () => {
   //sent message
   const [messageContent, setMessageContent] = useState("");
   const [isSending, setIsSending] = useState(false);
+
+  //socket
+  useEffect(() => {
+    const socket = io("http://localhost:5000", {
+      withCredentials: true,
+    });
+
+    socket.on("connect", () => {
+      console.log("Socket connected:", socket.id);
+    });
+
+    socket.on("connect_error", (error) => {
+      console.log("Socket connection error:", error.message);
+    });
+
+    socket.on("new-message", (newMessage: Message) => {
+      // console.log("New message received:", newMessage);
+
+      setMessages((prevMessages) => {
+        // Check whether this message belongs to the selected chat
+        const isCurrentChat =
+          selectedUser?.id === newMessage.senderId ||
+          selectedUser?.id === newMessage.receiverId;
+
+        if (!isCurrentChat) return prevMessages;
+
+        // Prevent duplicate messages
+        const alreadyExists = prevMessages.some(
+          (message) => message.id === newMessage.id,
+        );
+
+        if (alreadyExists) return prevMessages;
+
+        return [...prevMessages, newMessage];
+      });
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [selectedUser]);
 
   const { user: currentUser } = useAuth();
   //refs
@@ -207,7 +248,10 @@ const ChatDashboard = () => {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 
-              <Input placeholder="Search..." className="h-8 pl-8 text-xs sm:h-9 sm:pl-9 sm:text-sm" />
+              <Input
+                placeholder="Search..."
+                className="h-8 pl-8 text-xs sm:h-9 sm:pl-9 sm:text-sm"
+              />
             </div>
           </div>
 

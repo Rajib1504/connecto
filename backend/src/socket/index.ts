@@ -1,44 +1,51 @@
-// import type { Server } from "socket.io";
-// import { verifyToken } from "../utils/jwt.js";
 
-// export const initializeSocket = (io: Server) => {
-//   // 1. Authenticate socket connection
-//   io.use((socket, next) => {
-//     try {
-//       const cookieHeader = socket.handshake.headers.cookie;
+import type { Server } from "socket.io";
+import { verifyToken } from "../utils/jwt.js";
 
-//       if (!cookieHeader) {
-//         return next(new Error("Authentication required"));
-//       }
+export const initializeSocket = (io: Server) => {
+  // 1. Authenticate socket connection
+  io.use((socket, next) => {
+    try {
+      const cookieHeader = socket.handshake.headers.cookie;
 
-//       const cookies = parse(cookieHeader);
-//       const token = cookies.token;
 
-//       if (!token) {
-//         return next(new Error("Authentication required"));
-//       }
+      if (!cookieHeader) {
+        return next(new Error("Authentication required"));
+      }
 
-//       const decoded = verifyToken(token);
+      const token = cookieHeader
+        .split(";")
+        .map((item) => item.trim())
+        .find((item) => item.startsWith("token="))
+        ?.slice("token=".length);
 
-//       socket.data.userId = decoded.userId;
 
-//       next();
-//     } catch {
-//       next(new Error("Invalid or expired token"));
-//     }
-//   });
+      if (!token) {
+        return next(new Error("Authentication required"));
+      }
 
-//   // 2. Connect authenticated user
-//   io.on("connection", (socket) => {
-//     const userId = socket.data.userId;
+      const decoded = verifyToken(token);
 
-//     // Join personal room
-//     socket.join(`user:${userId}`);
+      socket.data.userId = decoded.userId;
 
-//     console.log(`User ${userId} connected:`, socket.id);
+      next();
+    } catch {
+      next(new Error("Invalid or expired token"));
+    }
+  });
 
-//     socket.on("disconnect", () => {
-//       console.log(`User ${userId} disconnected`);
-//     });
-//   });
-// };
+  // 2. Handle authenticated connection
+  io.on("connection", (socket) => {
+    const userId = socket.data.userId;
+
+    // Join personal room
+    socket.join(`user:${userId}`);
+
+    console.log(`User ${userId} connected:`, socket.id);
+
+    socket.on("disconnect", () => {
+      console.log(`User ${userId} disconnected`);
+    });
+  });
+ 
+};
