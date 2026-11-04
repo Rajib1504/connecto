@@ -2,19 +2,30 @@ import { createBrowserRouter } from "react-router";
 import Layout from "@/layout/Layout";
 import SignIn from "@/pages/SignIn";
 import SignUp from "@/pages/SignUp";
+import AuthGuard from "@/components/authGuard";
 
 const router = createBrowserRouter([
   {
-    path: "/",
-    element: <Layout />,
+    element: <AuthGuard />,
+    children: [
+      {
+        path: "/",
+        element: <Layout />,
+      },
+    ],
   },
   {
-    path: "/signIn",
-    element: <SignIn />,
-  },
-  {
-    path: "/signUp",
-    element: <SignUp />,
+    element: <AuthGuard guestOnly />,
+    children: [
+      {
+        path: "/signIn",
+        element: <SignIn />,
+      },
+      {
+        path: "/signUp",
+        element: <SignUp />,
+      },
+    ],
   },
 ]);
 

@@ -22,6 +22,8 @@ app.use(cookieParser());
 app.use("/api/v1/auth", AuthRouter)
 app.use("/api/v1/users", UserRouter)
 app.use("/api/v1/messages", MessageRouter);
+
+
 app.get("/", (req, res) => {
   res.send("Hello World!from Express");
 });

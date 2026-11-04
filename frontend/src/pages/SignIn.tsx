@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import api from "@/lib/axios";
+import { useAuth } from "@/context/AuthContext";
 
 type FormData = {
   email: string;
@@ -25,6 +26,7 @@ const SignIn = () => {
     password: "",
   });
   const [errors, setErrors] = useState<FormErrors>({});
+  const { setAuthenticatedUser } = useAuth();
 
   const validateField = (name: keyof FormData, value: string): string => {
     if (name === "email") {
@@ -88,6 +90,7 @@ const SignIn = () => {
 
       if (result.data.success) {
         toast.success(result.data.message);
+        setAuthenticatedUser(result.data.data);
         setFormData({ email: "", password: "" });
         navigate("/", { replace: true });
       } else {
