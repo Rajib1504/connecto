@@ -34,10 +34,7 @@ const ChatDashboard = () => {
     nextCursor: number | null;
   };
 
-
-
-
-//states
+  //states
   const [users, setUsers] = useState<User[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -50,14 +47,16 @@ const ChatDashboard = () => {
     useState<MessagePagination | null>(null);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
-  const loadingRef = useRef(false);
-
+  //sent message
+  const [messageContent, setMessageContent] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
   const { user: currentUser } = useAuth();
   //refs
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef(false);
 
-
+  //fetchs
   const fetchUsers = async (nextPage: number) => {
     if (loadingRef.current || (!hasMore && nextPage !== 1)) return;
 
@@ -91,7 +90,7 @@ const ChatDashboard = () => {
   useEffect(() => {
     fetchUsers(1);
   }, []);
- //chat history fetch
+  //chat history fetch
   const fetchChatHistory = async (receiverId: number, before?: number) => {
     try {
       if (before) {
@@ -152,6 +151,34 @@ const ChatDashboard = () => {
       requestAnimationFrame(() => {
         container.scrollTop = container.scrollHeight - previousHeight;
       });
+    }
+  };
+
+  //sent message function
+  const handleSendMessage = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const content = messageContent.trim();
+
+    if (!content || !selectedUser || isSending) return;
+
+    try {
+      setIsSending(true);
+
+      const response = await api.post("/messages", {
+        receiverId: selectedUser.id,
+        content,
+      });
+
+      const newMessage = response.data.data;
+
+      setMessages((prev) => [...prev, newMessage]);
+      setMessageContent("");
+    } catch (error) {
+      console.error("Failed to send message:", error);
+      toast.error("Unable to send message");
+    } finally {
+      setIsSending(false);
     }
   };
   return (
@@ -322,16 +349,29 @@ const ChatDashboard = () => {
           </div>
 
           {/* Message Input - Disabled until conversation selected */}
-          <div className="border-t p-4">
-            <div className="flex items-center gap-3">
-              <Input placeholder="Select a conversation first..." disabled />
+          <form
+            onSubmit={handleSendMessage}
+            className="flex items-center gap-3 border-t p-4"
+          >
+            <Input
+              placeholder={
+                selectedUser
+                  ? "Type your message..."
+                  : "Select a conversation first..."
+              }
+              value={messageContent}
+              onChange={(event) => setMessageContent(event.target.value)}
+              disabled={!selectedUser || isSending}
+              maxLength={5000}
+            />
 
-              <Button disabled>
-                <MessageCircle className="size-4" />
-                Send
-              </Button>
-            </div>
-          </div>
+            <Button
+              type="submit"
+              disabled={!selectedUser || !messageContent.trim() || isSending}
+            >
+              {isSending ? "Sending..." : "Send"}
+            </Button>
+          </form>
         </main>
       </div>
     </div>
