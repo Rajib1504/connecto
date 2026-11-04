@@ -4,6 +4,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import ApiError from "./utils/api-error";
 import UserRouter from "./routes/user.route";
+import MessageRouter from "./routes/message.route";
 
 
 const app = express();
@@ -20,7 +21,7 @@ app.use(cookieParser());
 
 app.use("/api/v1/auth", AuthRouter)
 app.use("/api/v1/users", UserRouter)
-
+app.use("/api/v1/messages", MessageRouter);
 app.get("/", (req, res) => {
   res.send("Hello World!from Express");
 });
