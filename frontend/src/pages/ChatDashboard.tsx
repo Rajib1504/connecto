@@ -1,8 +1,6 @@
 import {
-  MessageCircle,
   Search,
   Users,
-  UserRound,
   MoreVertical,
 } from "lucide-react";
 
