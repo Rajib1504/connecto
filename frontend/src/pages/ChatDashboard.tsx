@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import api from "@/lib/axios";
+import { useAuth } from "@/context/AuthContext";
+import toast from "react-hot-toast";
 
 const ChatDashboard = () => {
   type User = {
@@ -18,12 +20,43 @@ const ChatDashboard = () => {
     email: string;
   };
 
+  type Message = {
+    id: number;
+    senderId: number;
+    receiverId: number;
+    content: string;
+    createdAt: string;
+  };
+
+  type MessagePagination = {
+    limit: number;
+    hasMore: boolean;
+    nextCursor: number | null;
+  };
+
+
+
+
+//states
   const [users, setUsers] = useState<User[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
-
+  //selected user
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  //message states
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [messagePagination, setMessagePagination] =
+    useState<MessagePagination | null>(null);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const loadingRef = useRef(false);
+
+
+  const { user: currentUser } = useAuth();
+  //refs
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
 
   const fetchUsers = async (nextPage: number) => {
     if (loadingRef.current || (!hasMore && nextPage !== 1)) return;
@@ -54,12 +87,44 @@ const ChatDashboard = () => {
       setIsLoadingUsers(false);
     }
   };
-
   //first load
-
   useEffect(() => {
     fetchUsers(1);
   }, []);
+ //chat history fetch
+  const fetchChatHistory = async (receiverId: number, before?: number) => {
+    try {
+      if (before) {
+        setIsLoadingOlder(true);
+      } else {
+        setIsLoadingMessages(true);
+        setMessages([]);
+      }
+
+      const response = await api.get(`/messages/${receiverId}`, {
+        params: {
+          limit: 30,
+          ...(before && { before }),
+        },
+      });
+
+      const { messages: newMessages, pagination } = response.data.data;
+
+      if (before) {
+        setMessages((prev) => [...newMessages, ...prev]);
+      } else {
+        setMessages(newMessages);
+      }
+
+      setMessagePagination(pagination);
+    } catch (error) {
+      console.error("Failed to fetch chat history:", error);
+      toast.error("Unable to load chat history");
+    } finally {
+      setIsLoadingMessages(false);
+      setIsLoadingOlder(false);
+    }
+  };
 
   //infinite scroll
   const handleUserScroll = (event: React.UIEvent<HTMLDivElement>) => {
@@ -69,6 +134,24 @@ const ChatDashboard = () => {
 
     if (isNearBottom && hasMore && !loadingRef.current) {
       fetchUsers(page + 1);
+    }
+  };
+  const handleChatScroll = async () => {
+    const container = chatContainerRef.current;
+
+    if (!container || !messagePagination?.hasMore) return;
+
+    if (container.scrollTop <= 50 && !isLoadingOlder) {
+      const previousHeight = container.scrollHeight;
+      const cursor = messagePagination.nextCursor;
+
+      if (!cursor || !selectedUser) return;
+
+      await fetchChatHistory(selectedUser.id, cursor);
+
+      requestAnimationFrame(() => {
+        container.scrollTop = container.scrollHeight - previousHeight;
+      });
     }
   };
   return (
@@ -102,7 +185,6 @@ const ChatDashboard = () => {
           </div>
 
           {/* User List */}
-          {/* User List */}
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="flex items-center gap-2 px-4 py-4">
               <Users className="size-4 text-muted-foreground" />
@@ -122,7 +204,13 @@ const ChatDashboard = () => {
                 users.map((user) => (
                   <button
                     key={user.id}
-                    className="flex w-full items-center gap-3 border-b px-4 py-3 text-left transition-colors hover:bg-accent"
+                    onClick={() => {
+                      setSelectedUser(user);
+                      fetchChatHistory(user.id);
+                    }}
+                    className={`flex w-full items-center gap-3 border-b px-4 py-3 text-left transition-colors hover:bg-accent ${
+                      selectedUser?.id === user.id ? "bg-accent" : ""
+                    }`}
                   >
                     <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-semibold text-foreground">
                       {user.name.charAt(0).toUpperCase()}
@@ -162,12 +250,17 @@ const ChatDashboard = () => {
         {/* Chat Window */}
         <main className="hidden flex-1 flex-col md:flex">
           {/* Chat Header */}
-          <div className="flex h-[73px] items-center justify-between border-b px-6">
-            <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-full bg-muted">
-                <UserRound className="size-5 text-muted-foreground" />
+          <div className="flex h-18.25 items-center justify-between border-b px-6">
+            {selectedUser ? (
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  {selectedUser.name}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {selectedUser.email}
+                </p>
               </div>
-
+            ) : (
               <div>
                 <p className="text-sm font-semibold text-foreground">
                   Select a conversation
@@ -176,23 +269,56 @@ const ChatDashboard = () => {
                   Choose a user to start chatting
                 </p>
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Empty Chat State */}
-          <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
-            <div className="mb-5 flex size-20 items-center justify-center rounded-full bg-muted">
-              <MessageCircle className="size-9 text-muted-foreground" />
-            </div>
+          {/*  Chat State */}
+          <div
+            ref={chatContainerRef}
+            onScroll={handleChatScroll}
+            className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4"
+          >
+            {isLoadingMessages && (
+              <p className="text-center text-sm text-muted-foreground">
+                Loading messages...
+              </p>
+            )}
 
-            <h2 className="text-xl font-semibold text-foreground">
-              Your messages
-            </h2>
+            {messages.map((message) => {
+              const isOwnMessage = message.senderId === currentUser?.id;
 
-            <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-              Select someone from your user list and start a conversation. Your
-              messages will appear here.
-            </p>
+              return (
+                <div
+                  key={message.id}
+                  className={`flex ${
+                    isOwnMessage ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  <div
+                    className={`max-w-[75%] rounded-2xl px-4 py-3 ${
+                      isOwnMessage
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-foreground"
+                    }`}
+                  >
+                    <p className="break-words text-sm">{message.content}</p>
+
+                    <p
+                      className={`mt-1 text-[10px] ${
+                        isOwnMessage
+                          ? "text-primary-foreground/70"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {new Date(message.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           {/* Message Input - Disabled until conversation selected */}
